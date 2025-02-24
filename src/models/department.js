@@ -128,3 +128,4 @@ departmentSchema.statics.getDepartmentsByGroup = function (groupId, callback) {
 }
 
 module.exports = mongoose.model(COLLECTION, departmentSchema)
+module.exports.departmentSchema = {collection: COLLECTION, schema: departmentSchema}

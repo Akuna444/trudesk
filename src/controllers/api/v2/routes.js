@@ -12,7 +12,10 @@
  *  Copyright (c) 2014-2019. All rights reserved.
  */
 
+const tenantMiddleware = require('../../../middleware/tenantMiddleware');
+
 module.exports = function (middleware, router, controllers) {
+ 
   // Shorten Vars
   const apiv2Auth = middleware.apiv2
   const apiv2 = controllers.api.v2
@@ -21,6 +24,8 @@ module.exports = function (middleware, router, controllers) {
   const isAgentOrAdmin = middleware.isAgentOrAdmin
   const csrfCheck = middleware.csrfCheck
   const canUser = middleware.canUser
+
+  router.use(tenantMiddleware)
 
   // Common
   router.get('/api/v2/login', apiv2Auth, apiv2.accounts.sessionUser)

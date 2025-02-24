@@ -22,8 +22,13 @@ var permissions = require('../../../permissions')
 var emitter = require('../../../emitter')
 var xss = require('xss')
 var sanitizeHtml = require('sanitize-html')
-const { ticketQueue } = require("../../../queue/ticketQueue");
-const { type } = require('os')
+const db = require('../../../database')
+const { ticketStatusSchema } = require('../../../models/ticketStatus')
+const { userSchema } = require('../../../models/user')
+const { ticketSchema } = require('../../../models/ticket')
+
+// const { ticketQueue } = require("../../../queue/ticketQueue");
+// const { type } = require('os')
 
 
 
@@ -144,6 +149,10 @@ function buildAvgResponse (ticketArray, callback) {
  *
  */
 apiTickets.get = function (req, res) {
+
+  const tenant = req.tenant; // Get tenant from request
+  const tenantDb = db.getConnection(tenant); // Get tenant-specific database connection
+
   var l = req.query.limit ? req.query.limit : 10
   var limit = parseInt(l)
   var page = parseInt(req.query.page)
@@ -159,9 +168,10 @@ apiTickets.get = function (req, res) {
     status: status
   }
 
-  var ticketModel = require('../../../models/ticket')
-  var groupModel = require('../../../models/group')
-  var departmentModel = require('../../../models/department')
+  const ticketModel = tenantDb.model('Ticket', require('../../../models/ticket'));
+  const groupModel = tenantDb.model('Group', require('../../../models/group'));
+  const departmentModel = tenantDb.model('Department', require('../../../models/department'));
+
 
   async.waterfall(
     [
@@ -415,6 +425,9 @@ apiTickets.search = function (req, res) {
       
 
         apiTickets.create = function (req, res) {
+
+          const tenant = req.tenant; // Get tenant from request
+          const tenantDb = db.getConnection(tenant); // Get tenant-specific database connection
           var response = {};
           response.success = true;
       
@@ -433,11 +446,11 @@ apiTickets.search = function (req, res) {
           async.waterfall(
               [
                   function (done) {
-                      var UserSchema = require("../../../models/user");
+                      var UserSchema = tenantDb.model(userSchema.collection, userSchema.userSchema);
                       UserSchema.findOne({ _id: req.user._id }, done);
                   },
                   function (user, done) {
-                      var TicketStatusSchema = require("../../../models/ticketStatus");
+                      var TicketStatusSchema = tenantDb.model(ticketStatusSchema.collection, ticketStatusSchema.ticketStatusSchema)
                       TicketStatusSchema.findOne({ order: 0 }, function (err, status) {
                           return done(err, status, user);
                       });
@@ -451,7 +464,7 @@ apiTickets.search = function (req, res) {
                           owner: req.user._id,
                       };
       
-                      var TicketSchema = require("../../../models/ticket");
+                      var TicketSchema = tenantDb.model(ticketSchema.collection, ticketSchema.ticketSchema)
                       var ticket = new TicketSchema(postData);
       
                       ticket.status = status._id;
@@ -499,18 +512,18 @@ apiTickets.search = function (req, res) {
                                   if (err) return res.status(400).json({ success: false, error: err.message });
                                   if (setting.value) {
                                     
-                                      await ticketQueue.add(
-                                          "escalateTicket",
-                                          {
-                                              ticketId: tt._id,
-                                              headers: req.headers,  // Pass headers
-                                              user: req.user,
-                                              socketId: socketId
-                                          },
-                                          {
-                                              delay: typeof delayTime === 'number' ? delayTime * 60 * 1000 : 30 * 60 * 1000
-                                          }
-                                      );
+                                      // await ticketQueue.add(
+                                      //     "escalateTicket",
+                                      //     {
+                                      //         ticketId: tt._id,
+                                      //         headers: req.headers,  // Pass headers
+                                      //         user: req.user,
+                                      //         socketId: socketId
+                                      //     },
+                                      //     {
+                                      //         delay: typeof delayTime === 'number' ? delayTime * 60 * 1000 : 30 * 60 * 1000
+                                      //     }
+                                      // );
                                   }
                               });
                           });

@@ -15,6 +15,7 @@
 var _ = require('lodash')
 var mongoose = require('mongoose')
 var utils = require('../helpers/utils')
+const { Collection } = require('immutable')
 
 var COLLECTION = 'groups'
 
@@ -301,3 +302,4 @@ function isMember (arr, id) {
 }
 
 module.exports = mongoose.model(COLLECTION, groupSchema)
+module.exports.groupSchema = {collection: COLLECTION, schema: groupSchema}

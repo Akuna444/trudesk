@@ -81,3 +81,7 @@ statusSchema.statics.getStatusByUID = function (uid, callback) {
 }
 
 module.exports = mongoose.model(COLLECTION, statusSchema)
+module.exports.ticketStatusSchema = {
+  collection: COLLECTION,
+  schema: statusSchema
+}

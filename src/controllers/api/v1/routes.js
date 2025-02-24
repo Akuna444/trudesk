@@ -12,9 +12,12 @@
  *  Copyright (c) 2014-2019. All rights reserved.
  */
 
-const packagejson = require('../../../../package')
+const packagejson = require('../../../../package');
+const tenantMiddleware = require('../../../middleware/tenantMiddleware');
 
 module.exports = function (middleware, router, controllers) {
+
+  router.use(tenantMiddleware);
   // Shorten consts
   const apiv1 = middleware.api
   const isAdmin = middleware.isAdmin

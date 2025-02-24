@@ -18,7 +18,7 @@ const winston = require('../logger')
 
 const db = {}
 const mongoConnectionUri = {
-  server: process.env.TD_MONGODB_SERVER || nconf.get('mongo:host'),
+  server: process.env.TD_MONGODB_SERVER || "127.0.0.1" || nconf.get('mongo:host') ,
   port: process.env.TD_MONGODB_PORT || nconf.get('mongo:port') || '27017',
   username: process.env.TD_MONGODB_USERNAME || nconf.get('mongo:username'),
   password: process.env.TD_MONGODB_PASSWORD || nconf.get('mongo:password'),
@@ -76,9 +76,11 @@ module.exports.init = async function (callback, connectionString, opts) {
 
   global.CONNECTION_URI = CONNECTION_URI
 
+  console.log(CONNECTION_URI);
+
   mongoose.Promise = global.Promise
   mongoose
-    .connect(CONNECTION_URI, options)
+    .connect(`${CONNECTION_URI}?authSource=admin`, options)
     .then(function () {
       if (!process.env.FORK) {
         winston.info('Connected to MongoDB')
@@ -98,6 +100,34 @@ module.exports.init = async function (callback, connectionString, opts) {
       return callback(e, null)
     })
 }
+
+module.exports.getConnection = function (tenant) {
+  const tenantDbName = `${mongoConnectionUri.database}_${tenant}`;
+
+  // Construct the connection URI dynamically
+  let tenantConnectionUri;
+  if (!mongoConnectionUri.username) {
+    // No username/password
+    tenantConnectionUri =
+      `mongodb://${mongoConnectionUri.server}:${mongoConnectionUri.port}/${tenantDbName}`;
+    if (mongoConnectionUri.shard === true) {
+      tenantConnectionUri = `mongodb+srv://${mongoConnectionUri.server}/${tenantDbName}`;
+    }
+  } else {
+    // With username/password
+    mongoConnectionUri.password = encodeURIComponent(mongoConnectionUri.password);
+    if (mongoConnectionUri.shard === true) {
+      tenantConnectionUri =
+        `mongodb+srv://${mongoConnectionUri.username}:${mongoConnectionUri.password}@${mongoConnectionUri.server}/${tenantDbName}`;
+    } else {
+      tenantConnectionUri =
+        `mongodb://${mongoConnectionUri.username}:${mongoConnectionUri.password}@${mongoConnectionUri.server}:${mongoConnectionUri.port}/${tenantDbName}`;
+    }
+  }
+
+  console.log('Tenant connection URI:', tenantConnectionUri);
+  return mongoose.createConnection(`${tenantConnectionUri}?authSource=admin`, options);
+};
 
 module.exports.db = db
 module.exports.connectionuri = CONNECTION_URI

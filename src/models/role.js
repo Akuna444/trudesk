@@ -111,3 +111,7 @@ roleSchema.statics.getAgentRoles = function (callback) {
 roleSchema.statics.get = roleSchema.statics.getRole
 
 module.exports = mongoose.model(COLLECTION, roleSchema)
+module.exports.roleSchema = {
+  collection: COLLECTION,
+  schema: roleSchema
+}

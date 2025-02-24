@@ -15,6 +15,7 @@
 const _ = require('lodash')
 const async = require('async')
 const winston = require('../../../logger')
+const { db } = require('../../../models/tenant')
 
 const commonV1 = {}
 
@@ -43,7 +44,11 @@ const commonV1 = {}
  *
  */
 commonV1.login = function (req, res) {
-  var userModel = require('../../../models/user')
+  console.log("Running ??")
+  const tenant = req.tenant; // Get tenant from request
+  const tenantDb = db.getConnection(tenant); // Get tenant-specific database connection
+
+  var userModel = tenantDb.model('accounts', require('../../../models/user'))
   var username = req.body.username
   var password = req.body.password
 
@@ -66,6 +71,7 @@ commonV1.login = function (req, res) {
     delete resUser.tOTPKey
     delete resUser.__v
     delete resUser.preferences
+    console.log(resUser, "hey")
 
     if (_.isUndefined(resUser.accessToken) || _.isNull(resUser.accessToken)) {
       return res.status(200).json({ success: false, error: 'No API Key assigned to this User.' })

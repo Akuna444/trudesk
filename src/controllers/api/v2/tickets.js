@@ -21,6 +21,13 @@ const permissions = require('../../../permissions')
 const ticketStatusSchema = require('../../../models/ticketStatus')
 const winston = require('winston/lib/winston/config')
 const emitter = require('../../../emitter')
+const db  = require('../../../database')
+const { ticketSchema } = require('../../../models/ticket')
+const { groupSchema } = require('../../../models/group')
+const { departmentSchema } = require('../../../models/department')
+const {teamsSchema} = require("../../../models/team")
+const {userSchema} = require("../../../models/user")
+const { roleSchema } = require('../../../models/role')
 
 const ticketsV2 = {}
 
@@ -49,13 +56,24 @@ ticketsV2.get = async (req, res) => {
     page
   }
 
+  const tenant = req.tenant; // Get tenant from request
+  const tenantDb = db.getConnection(tenant); // Get tenant-specific database connection
+  const ticketModel = tenantDb.model(ticketSchema.collection, ticketSchema.schema);
+  const groupModel = tenantDb.model(groupSchema.collection, groupSchema.schema);
+  const departmentModel = tenantDb.model(departmentSchema.collection, departmentSchema.schema);
+  const teamsModel = tenantDb.model(teamsSchema.collection, teamsSchema.schema);
+  const userModel = tenantDb.model(userSchema.collection, userSchema.schema);
+  const roleModel = tenantDb.model(roleSchema.collection, roleSchema.schema);
+  teamsModel.init()
+  userModel.init()
+
   try {
     let groups = []
     if (req.user.role.isAdmin || req.user.role.isAgent) {
-      const dbGroups = await Models.Department.getDepartmentGroupsOfUser(req.user._id)
+      const dbGroups = await departmentModel.getDepartmentGroupsOfUser(req.user._id)
       groups = dbGroups.map(g => g._id)
     } else {
-      groups = await Models.Group.getAllGroupsOfUser(req.user._id)
+      groups = await groupModel.getAllGroupsOfUser(req.user._id)
     }
 
     const mappedGroups = groups.map(g => g._id)
@@ -98,8 +116,8 @@ ticketsV2.get = async (req, res) => {
 
     if (!permissions.canThis(req.user.role, 'tickets:viewall', false)) queryObject.owner = req.user._id
 
-    const tickets = await Models.Ticket.getTicketsWithObject(mappedGroups, queryObject)
-    const totalCount = await Models.Ticket.getCountWithObject(mappedGroups, queryObject)
+    const tickets = await ticketModel.getTicketsWithObject(mappedGroups, queryObject)
+    const totalCount = await ticketModel.getCountWithObject(mappedGroups, queryObject)
 
     return apiUtils.sendApiSuccess(res, {
       tickets,

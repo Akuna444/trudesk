@@ -702,3 +702,7 @@ userSchema.statics.getAdmins = function (obj, callback) {
 }
 
 module.exports = mongoose.model(COLLECTION, userSchema)
+module.exports.userSchema = {
+  collection: COLLECTION,
+  schema: userSchema
+}

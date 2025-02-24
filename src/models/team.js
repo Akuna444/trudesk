@@ -188,3 +188,7 @@ function isMember (arr, id) {
 }
 
 module.exports = mongoose.model(COLLECTION, teamSchema)
+module.exports.teamsSchema = {
+  collection: COLLECTION,
+  schema: teamSchema
+}

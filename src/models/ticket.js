@@ -1716,3 +1716,7 @@ ticketSchema.statics.getDeleted = function (callback) {
 }
 
 module.exports = mongoose.model(COLLECTION, ticketSchema)
+module.exports.ticketSchema = {
+  collection: COLLECTION,
+  schema: ticketSchema
+}
